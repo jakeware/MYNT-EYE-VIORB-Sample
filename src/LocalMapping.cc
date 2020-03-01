@@ -26,6 +26,7 @@
 #include<mutex>
 #include "Converter.h"
 #include <Eigen/StdVector>
+#include <iomanip>
 
 namespace ORB_SLAM2
 {
