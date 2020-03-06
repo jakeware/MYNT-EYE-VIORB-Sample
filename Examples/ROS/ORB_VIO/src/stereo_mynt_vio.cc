@@ -18,7 +18,6 @@
 * along with ORB-SLAM2. If not, see <http://www.gnu.org/licenses/>.
 */
 
-
 #include<iostream>
 #include<algorithm>
 #include<fstream>
@@ -31,7 +30,7 @@
 
 #include"../../../include/System.h"
 
-#include "MsgSync/MsgSynchronizer.h"
+#include "StereoMsgSync/StereoMsgSynchronizer.h"
 
 #include "../../../src/IMU/imudata.h"
 #include "../../../src/IMU/configparam.h"
@@ -65,7 +64,7 @@ int main(int argc, char **argv)
     }
 
     // Create SLAM system. It initializes all system threads and gets ready to process frames.
-    ORB_SLAM2::System SLAM(argv[1],argv[2],ORB_SLAM2::System::MONOCULAR,true);
+    ORB_SLAM2::System SLAM(argv[1],argv[2],ORB_SLAM2::System::STEREO,true);
 
     ORB_SLAM2::ConfigParam config(argv[2]);
 
@@ -73,16 +72,19 @@ int main(int argc, char **argv)
      * @brief added data sync
      */
     double imageMsgDelaySec = config.GetImageDelayToIMU();
-    ORBVIO::MsgSynchronizer msgsync(imageMsgDelaySec);
+    ORBVIO::StereoMsgSynchronizer msgsync(imageMsgDelaySec);
     ros::NodeHandle nh;
-    ros::Subscriber imagesub;
+    ros::Subscriber leftimagesub;
+    ros::Subscriber rightimagesub;
     ros::Subscriber imusub;
     if(ORB_SLAM2::ConfigParam::GetRealTimeFlag())
     {
-        imagesub = nh.subscribe(config._imageTopic, /*200*/ 2, &ORBVIO::MsgSynchronizer::imageCallback, &msgsync);
-        imusub = nh.subscribe(config._imuTopic, 200, &ORBVIO::MsgSynchronizer::imuCallback, &msgsync);
+        leftimagesub = nh.subscribe(config._leftImageTopic, 10, &ORBVIO::StereoMsgSynchronizer::leftImageCallback, &msgsync);
+        rightimagesub = nh.subscribe(config._rightImageTopic, 10, &ORBVIO::StereoMsgSynchronizer::rightImageCallback, &msgsync);
+        imusub = nh.subscribe(config._imuTopic, 200, &ORBVIO::StereoMsgSynchronizer::imuCallback, &msgsync);
     }
-    sensor_msgs::ImageConstPtr imageMsg;
+    sensor_msgs::ImageConstPtr leftImageMsg;
+    sensor_msgs::ImageConstPtr rightImageMsg;
     std::vector<sensor_msgs::ImuConstPtr> vimuMsg;
 
     // 3dm imu output per g. 1g=9.80665 according to datasheet
@@ -101,8 +103,10 @@ int main(int argc, char **argv)
 
     std::vector<std::string> topics;
     std::string imutopic = config._imuTopic;
-    std::string imagetopic = config._imageTopic;
-    topics.push_back(imagetopic);
+    std::string leftimagetopic = config._leftImageTopic;
+    std::string rightimagetopic = config._rightImageTopic;
+    topics.push_back(leftimagetopic);
+    topics.push_back(rightimagetopic);
     topics.push_back(imutopic);
 
     rosbag::View view(bag, rosbag::TopicQuery(topics));
@@ -110,16 +114,20 @@ int main(int argc, char **argv)
     BOOST_FOREACH(rosbag::MessageInstance const m, view)
     {
         sensor_msgs::ImuConstPtr simu = m.instantiate<sensor_msgs::Imu>();
-        if(simu!=NULL)
+        if(simu!=NULL) {
             msgsync.imuCallback(simu);
-        sensor_msgs::ImageConstPtr simage = m.instantiate<sensor_msgs::Image>();
-        if(simage!=NULL)
-            msgsync.imageCallback(simage);
-        bool bdata = msgsync.getRecentMsgs(imageMsg,vimuMsg);
+        }
+        sensor_msgs::ImageConstPtr sleftimage = m.instantiate<sensor_msgs::Image>();
+        sensor_msgs::ImageConstPtr srightimage = m.instantiate<sensor_msgs::Image>();
+        if(sleftimage!=NULL && srightimage!=NULL) {
+            msgsync.leftImageCallback(sleftimage);
+            msgsync.rightImageCallback(srightimage);
+        }
+        bool bdata = msgsync.getRecentMsgs(leftImageMsg,rightImageMsg,vimuMsg);
 
         if(bdata)
         {
-            //std::vector<ORB_SLAM2::IMUData> vimuData;
+        //    std::vector<ORB_SLAM2::IMUData> vimuData;
 	    ORB_SLAM2::IMUData::vector_t vimuData;
             //ROS_INFO("image time: %.3f",imageMsg->header.stamp.toSec());
             for(unsigned int i=0;i<vimuMsg.size();i++)
@@ -141,10 +149,12 @@ int main(int argc, char **argv)
             }
 
             // Copy the ros image message to cv::Mat.
-            cv_bridge::CvImageConstPtr cv_ptr;
+            cv_bridge::CvImageConstPtr left_cv_ptr;
+            cv_bridge::CvImageConstPtr right_cv_ptr;
             try
             {
-                cv_ptr = cv_bridge::toCvShare(imageMsg);
+                left_cv_ptr = cv_bridge::toCvShare(leftImageMsg);
+                right_cv_ptr = cv_bridge::toCvShare(rightImageMsg);
             }
             catch (cv_bridge::Exception& e)
             {
@@ -154,18 +164,22 @@ int main(int argc, char **argv)
 
             // Consider delay of image message
             //SLAM.TrackMonocular(cv_ptr->image, imageMsg->header.stamp.toSec() - imageMsgDelaySec);
-            cv::Mat im = cv_ptr->image.clone();
+            cv::Mat imLeft = left_cv_ptr->image.clone();
+            cv::Mat imRight = right_cv_ptr->image.clone();
             {
                 // To test relocalization
                 static double startT=-1;
-                if(startT<0)
-                    startT = imageMsg->header.stamp.toSec();
+                if(startT<0) {
+                    startT = leftImageMsg->header.stamp.toSec();
+                }
                 // Below to test relocalizaiton
                 //if(imageMsg->header.stamp.toSec() > startT+25 && imageMsg->header.stamp.toSec() < startT+25.3)
-                if(imageMsg->header.stamp.toSec() < startT+config._testDiscardTime)
-                    im = cv::Mat::zeros(im.rows,im.cols,im.type());
+                if(leftImageMsg->header.stamp.toSec() < startT+config._testDiscardTime) {
+                    imLeft = cv::Mat::zeros(imLeft.rows,imLeft.cols,imLeft.type());
+                    imRight = cv::Mat::zeros(imRight.rows,imRight.cols,imRight.type());
+                }
             }
-            SLAM.TrackMonoVI(im, vimuData, imageMsg->header.stamp.toSec() - imageMsgDelaySec);
+            SLAM.TrackStereoVI(imLeft, imRight, vimuData, leftImageMsg->header.stamp.toSec() - imageMsgDelaySec);
             //SLAM.TrackMonoVI(cv_ptr->image, vimuData, imageMsg->header.stamp.toSec() - imageMsgDelaySec);
             //cv::imshow("image",cv_ptr->image);
 
@@ -197,12 +211,12 @@ int main(int argc, char **argv)
         ROS_WARN("Run realtime");
         while(ros::ok())
         {
-            bool bdata = msgsync.getRecentMsgs(imageMsg,vimuMsg);
+            bool bdata = msgsync.getRecentMsgs(leftImageMsg,rightImageMsg,vimuMsg);
 
             if(bdata)
             {
             //    std::vector<ORB_SLAM2::IMUData> vimuData;
-	         ORB_SLAM2::IMUData::vector_t vimuData;
+	        ORB_SLAM2::IMUData::vector_t vimuData;
                 //ROS_INFO("image time: %.3f",imageMsg->header.stamp.toSec());
                 for(unsigned int i=0;i<vimuMsg.size();i++)
                 {
@@ -223,10 +237,12 @@ int main(int argc, char **argv)
                 }
 
                 // Copy the ros image message to cv::Mat.
-                cv_bridge::CvImageConstPtr cv_ptr;
+                cv_bridge::CvImageConstPtr left_cv_ptr;
+                cv_bridge::CvImageConstPtr right_cv_ptr;
                 try
                 {
-                    cv_ptr = cv_bridge::toCvShare(imageMsg);
+                    left_cv_ptr = cv_bridge::toCvShare(leftImageMsg);
+                    right_cv_ptr = cv_bridge::toCvShare(rightImageMsg);
                 }
                 catch (cv_bridge::Exception& e)
                 {
@@ -236,18 +252,22 @@ int main(int argc, char **argv)
 
                 // Consider delay of image message
                 //SLAM.TrackMonocular(cv_ptr->image, imageMsg->header.stamp.toSec() - imageMsgDelaySec);
-                cv::Mat im = cv_ptr->image.clone();
+                cv::Mat imLeft = left_cv_ptr->image.clone();
+                cv::Mat imRight = right_cv_ptr->image.clone();
                 {
                     // To test relocalization
                     static double startT=-1;
-                    if(startT<0)
-                        startT = imageMsg->header.stamp.toSec();
+                    if(startT<0) {
+                        startT = leftImageMsg->header.stamp.toSec();
+                    }
                     // Below to test relocalizaiton
                     //if(imageMsg->header.stamp.toSec() > startT+25 && imageMsg->header.stamp.toSec() < startT+25.3)
-                    if(imageMsg->header.stamp.toSec() < startT+config._testDiscardTime)
-                        im = cv::Mat::zeros(im.rows,im.cols,im.type());
+                    if(leftImageMsg->header.stamp.toSec() < startT+config._testDiscardTime) {
+                        imLeft = cv::Mat::zeros(imLeft.rows,imLeft.cols,imLeft.type());
+                        imRight = cv::Mat::zeros(imRight.rows,imRight.cols,imRight.type());
+                    }
                 }
-                SLAM.TrackMonoVI(im, vimuData, imageMsg->header.stamp.toSec() - imageMsgDelaySec);
+                SLAM.TrackStereoVI(imLeft, imRight, vimuData, leftImageMsg->header.stamp.toSec() - imageMsgDelaySec);
                 //SLAM.TrackMonoVI(cv_ptr->image, vimuData, imageMsg->header.stamp.toSec() - imageMsgDelaySec);
                 //cv::imshow("image",cv_ptr->image);
 

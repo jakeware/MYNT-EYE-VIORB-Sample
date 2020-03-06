@@ -98,6 +98,51 @@ void System::SaveKeyFrameTrajectoryNavState(const string &filename)
     cout << endl << "NavState trajectory saved!" << endl;
 }
 
+cv::Mat System::TrackStereoVI(const cv::Mat &imLeft, const cv::Mat &imRight, const IMUData::vector_t &vimu, const double &timestamp)
+{
+    if(mSensor!=STEREO)
+    {
+        cerr << "ERROR: you called TrackStereo but input sensor was not set to STEREO." << endl;
+        exit(-1);
+    }   
+
+    // Check mode change
+    {
+        unique_lock<mutex> lock(mMutexMode);
+        if(mbActivateLocalizationMode)
+        {
+            mpLocalMapper->RequestStop();
+
+            // Wait until Local Mapping has effectively stopped
+            while(!mpLocalMapper->isStopped())
+            {
+                usleep(1000);
+            }
+
+            mpTracker->InformOnlyTracking(true);
+            mbActivateLocalizationMode = false;
+        }
+        if(mbDeactivateLocalizationMode)
+        {
+            mpTracker->InformOnlyTracking(false);
+            mpLocalMapper->Release();
+            mbDeactivateLocalizationMode = false;
+        }
+    }
+
+    // Check reset
+    {
+    unique_lock<mutex> lock(mMutexReset);
+    if(mbReset)
+    {
+        mpTracker->Reset();
+        mbReset = false;
+    }
+    }
+
+    return mpTracker->GrabImageStereoVI(imLeft,imRight,vimu,timestamp);
+}
+
 cv::Mat System::TrackMonoVI(const cv::Mat &im, const IMUData::vector_t &vimu, const double &timestamp)
 {
     if(mSensor!=MONOCULAR)

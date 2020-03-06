@@ -52,23 +52,21 @@ ${PROJECT_SOURCE_DIR}/../../../Thirdparty/g2o/lib/libg2o.so
 ${PROJECT_SOURCE_DIR}/../../../lib/libORB_SLAM2.so
 )
 
-# Node for monocular camera
-rosbuild_add_executable(VIO
-src/ros_vio.cc
-src/MsgSync/MsgSynchronizer.cpp
-src/MsgSync/MsgSynchronizer.h
-)
-
-target_link_libraries(VIO
-${LIBS}
-)
-
 rosbuild_add_executable(MYNT_VIO
 src/mynt_vio.cc
 src/MsgSync/MsgSynchronizer.cpp
 src/MsgSync/MsgSynchronizer.h
 )
 target_link_libraries(MYNT_VIO
+${LIBS}
+)
+
+rosbuild_add_executable(STEREO_MYNT_VIO
+src/stereo_mynt_vio.cc
+src/StereoMsgSync/StereoMsgSynchronizer.cpp
+src/StereoMsgSync/StereoMsgSynchronizer.h
+)
+target_link_libraries(STEREO_MYNT_VIO
 ${LIBS}
 )
 

@@ -53,6 +53,10 @@ public:
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 
     // Constructor for Monocular VI
+    Frame(const cv::Mat &imLeft, const cv::Mat &imRight, const double &timeStamp, const IMUData::vector_t &vimu, ORBextractor* extractor,ORBVocabulary* voc,
+          cv::Mat &K, cv::Mat &distCoef, const float &bf, const float &thDepth, KeyFrame* pLastKF=NULL);
+
+    // Constructor for Stereo VI
     Frame(const cv::Mat &imGray, const double &timeStamp, const IMUData::vector_t &vimu, ORBextractor* extractor,ORBVocabulary* voc,
           cv::Mat &K, cv::Mat &distCoef, const float &bf, const float &thDepth, KeyFrame* pLastKF=NULL);
 

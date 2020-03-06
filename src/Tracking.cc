@@ -491,6 +491,49 @@ cv::Mat Tracking::GrabImageMonoVI(const cv::Mat &im, const IMUData::vector_t &vi
     return mCurrentFrame.mTcw.clone();
 }
 
+cv::Mat Tracking::GrabImageStereoVI(const cv::Mat &imRectLeft, const cv::Mat &imRectRight, const IMUData::vector_t &vimu, const double &timestamp)
+{
+    mvIMUSinceLastKF.insert(mvIMUSinceLastKF.end(), vimu.begin(),vimu.end());
+    mImGray = imRectLeft;
+    cv::Mat imGrayRight = imRectRight;
+
+    if(mImGray.channels()==3)
+    {
+        if(mbRGB)
+        {
+            cvtColor(mImGray,mImGray,CV_RGB2GRAY);
+            cvtColor(imGrayRight,imGrayRight,CV_RGB2GRAY);
+        }
+        else
+        {
+            cvtColor(mImGray,mImGray,CV_BGR2GRAY);
+            cvtColor(imGrayRight,imGrayRight,CV_BGR2GRAY);
+        }
+    }
+    else if(mImGray.channels()==4)
+    {
+        if(mbRGB)
+        {
+            cvtColor(mImGray,mImGray,CV_RGBA2GRAY);
+            cvtColor(imGrayRight,imGrayRight,CV_RGBA2GRAY);
+        }
+        else
+        {
+            cvtColor(mImGray,mImGray,CV_BGRA2GRAY);
+            cvtColor(imGrayRight,imGrayRight,CV_BGRA2GRAY);
+        }
+    }
+
+    if(mState==NOT_INITIALIZED || mState==NO_IMAGES_YET)
+        mCurrentFrame = Frame(mImGray,imGrayRight,timestamp,vimu,mpIniORBextractor,mpORBVocabulary,mK,mDistCoef,mbf,mThDepth);
+    else
+        mCurrentFrame = Frame(mImGray,imGrayRight,timestamp,vimu,mpORBextractorLeft,mpORBVocabulary,mK,mDistCoef,mbf,mThDepth,mpLastKeyFrame);
+
+    Track();
+
+    return mCurrentFrame.mTcw.clone();
+}
+
 //-------------------------------------------------------------------------------------------
 //-------------------------------------------------------------------------------------------
 //-------------------------------------------------------------------------------------------

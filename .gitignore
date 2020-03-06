@@ -11,6 +11,7 @@ Vocabulary/*.txt
 **/debug.txt
 *~
 *.swp
+settings.json
 
 Examples/ROS/ORB_SLAM2/Mono
 Examples/ROS/ORB_SLAM2/RGBD
