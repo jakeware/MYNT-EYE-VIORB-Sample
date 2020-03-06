@@ -26,3 +26,4 @@ Examples/Stereo/stereo_kitti
 
 Examples/ROS/ORB_VIO/VIO
 Examples/ROS/ORB_VIO/MYNT_VIO
+Examples/ROS/ORB_VIO/STEREO_MYNT_VIO
