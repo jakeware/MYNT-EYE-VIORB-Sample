@@ -12,6 +12,7 @@ Vocabulary/*.txt
 *~
 *.swp
 settings.json
+.vscode/
 
 Examples/ROS/ORB_SLAM2/Mono
 Examples/ROS/ORB_SLAM2/RGBD
