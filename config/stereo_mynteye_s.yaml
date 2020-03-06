@@ -19,6 +19,7 @@ bagfile: "/opt/mynteye_atrium_dolphin.bag"
 
 imutopic: "/mynteye/imu/data_raw"
 leftimagetopic: "/mynteye/left/image_raw"
+rightimagetopic: "/mynteye/right/image_raw"
 
 # Timestamp shift. Timage = Timu + image_delay
 Camera.delaytoimu: 0
