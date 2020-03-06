@@ -1,19 +1,19 @@
 %YAML:1.0
 
 # 1: realtime, 0: non-realtime
-test.RealTime: 1
+test.RealTime: 0
 # Time for visual-inertial initialization
 test.VINSInitTime: 15.0
 
 # Modify test.InitVIOTmpPath and bagfile to the correct path
 # Path to save tmp files/results
-test.InitVIOTmpPath: "/home/zhangs/LearnVIORB/temp/mynt/"
+test.InitVIOTmpPath: "/opt"
 
 ## For good initialization (no movement at the beginning for some bag)
 test.DiscardTime: 0
 #test.DiscardTime: 18
 
-bagfile: "/home/zhangs/files_bags/30_500.bag"
+bagfile: "/opt/mynteye_atrium_dolphin.bag"
 
 #######################################
 
@@ -29,9 +29,9 @@ IMU.multiplyG: 0
 
 # camera-imu frame transformation, Pi = Tic * Pc
 Camera.Tbc:
- [-0.0064662, -0.99994994, -0.00763565, 0.00533646,
-  0.99997909, -0.00646566, -0.00009558, -0.04302922,
-  0.0000462, -0.00763611, 0.99997084, 0.02303124,
+ [-0.016250607827436148, -0.9998512405245886, -0.005780533425264023, -0.07513204265405812,
+  -0.0024240900898974127, 0.005820677335537122, -0.9999801215537197, 0.003491915705214365,
+  0.9998650116553109, -0.016236272256810902, -0.002518319028197158, -0.0349640569908768,
   0.0, 0.0, 0.0, 1.0]
 
 # Local Window size
@@ -42,16 +42,15 @@ LocalMapping.LocalWindowSize: 20
 #--------------------------------------------------------------------------------------------
 
 # Camera calibration and distortion parameters (OpenCV) 
-Camera.fx: 3.5847442850029023e+02 
-Camera.fy: 3.5952665535350462e+02
-Camera.cx: 3.8840661559633401e+02
-Camera.cy: 2.5476941553631312e+02
+Camera.fx: 366.464829202444 
+Camera.fy: 366.6496267746324
+Camera.cx: 371.10794906761015
+Camera.cy: 243.15915597651244
 
-Camera.k1: -3.0825216120347504e-01
-Camera.k2: 8.4251305214302186e-02
-Camera.p1: -1.5009319710179576e-04
-Camera.p2: 2.0170689406091280e-04
-
+Camera.k1: -0.3186453409161979
+Camera.k2: 0.09961770731315886
+Camera.p1: 0.0004079858543647025
+Camera.p2: 9.082890892238505e-05
 
 # Camera frames per second 
 Camera.fps: 30.0
