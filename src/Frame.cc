@@ -201,9 +201,9 @@ Frame::Frame(const cv::Mat &imGray, const double &timeStamp, const IMUData::vect
     AssignFeaturesToGrid();
 }
 
-Frame::Frame(const cv::Mat &imLeft, const cv::Mat &imRight, const double &timeStamp, const IMUData::vector_t &vimu, ORBextractor* extractor,ORBVocabulary* voc,
+Frame::Frame(const cv::Mat &imLeft, const cv::Mat &imRight, const double &timeStamp, const IMUData::vector_t &vimu, ORBextractor* extractorLeft, ORBextractor* extractorRight, ORBVocabulary* voc,
              cv::Mat &K, cv::Mat &distCoef, const float &bf, const float &thDepth, KeyFrame* pLastKF)
-    :mpORBvocabulary(voc),mpORBextractorLeft(extractor),mpORBextractorRight(static_cast<ORBextractor*>(NULL)),
+    :mpORBvocabulary(voc),mpORBextractorLeft(extractorLeft),mpORBextractorRight(extractorRight),
      mTimeStamp(timeStamp), mK(K.clone()),mDistCoef(distCoef.clone()), mbf(bf), mThDepth(thDepth)
 {
     // Copy IMU data

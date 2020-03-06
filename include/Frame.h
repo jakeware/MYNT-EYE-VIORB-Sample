@@ -52,14 +52,6 @@ class Frame
 public:
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 
-    // Constructor for Monocular VI
-    Frame(const cv::Mat &imLeft, const cv::Mat &imRight, const double &timeStamp, const IMUData::vector_t &vimu, ORBextractor* extractor,ORBVocabulary* voc,
-          cv::Mat &K, cv::Mat &distCoef, const float &bf, const float &thDepth, KeyFrame* pLastKF=NULL);
-
-    // Constructor for Stereo VI
-    Frame(const cv::Mat &imGray, const double &timeStamp, const IMUData::vector_t &vimu, ORBextractor* extractor,ORBVocabulary* voc,
-          cv::Mat &K, cv::Mat &distCoef, const float &bf, const float &thDepth, KeyFrame* pLastKF=NULL);
-
     void ComputeIMUPreIntSinceLastFrame(const Frame* pLastF, IMUPreintegrator& imupreint) const;
     void UpdatePoseFromNS(const cv::Mat &Tbc);
     void SetInitialNavStateAndBias(const NavState& ns);
@@ -94,6 +86,14 @@ public:
 
     // Constructor for Monocular cameras.
     Frame(const cv::Mat &imGray, const double &timeStamp, ORBextractor* extractor,ORBVocabulary* voc, cv::Mat &K, cv::Mat &distCoef, const float &bf, const float &thDepth);
+
+    // Constructor for Stereo VI
+    Frame(const cv::Mat &imLeft, const cv::Mat &imRight, const double &timeStamp, const IMUData::vector_t &vimu, ORBextractor* extractorLeft, ORBextractor* extractorRight, ORBVocabulary* voc,
+          cv::Mat &K, cv::Mat &distCoef, const float &bf, const float &thDepth, KeyFrame* pLastKF=NULL);
+
+    // Constructor for Monocular VI
+    Frame(const cv::Mat &imGray, const double &timeStamp, const IMUData::vector_t &vimu, ORBextractor* extractor,ORBVocabulary* voc,
+          cv::Mat &K, cv::Mat &distCoef, const float &bf, const float &thDepth, KeyFrame* pLastKF=NULL);
 
     // Extract ORB on the image. 0 for left image and 1 for right image.
     void ExtractORB(int flag, const cv::Mat &im);

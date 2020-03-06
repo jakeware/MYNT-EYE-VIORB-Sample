@@ -525,9 +525,9 @@ cv::Mat Tracking::GrabImageStereoVI(const cv::Mat &imRectLeft, const cv::Mat &im
     }
 
     if(mState==NOT_INITIALIZED || mState==NO_IMAGES_YET)
-        mCurrentFrame = Frame(mImGray,imGrayRight,timestamp,vimu,mpIniORBextractor,mpORBVocabulary,mK,mDistCoef,mbf,mThDepth);
+        mCurrentFrame = Frame(mImGray,imGrayRight,timestamp,vimu,mpORBextractorLeft,mpORBextractorRight,mpORBVocabulary,mK,mDistCoef,mbf,mThDepth);
     else
-        mCurrentFrame = Frame(mImGray,imGrayRight,timestamp,vimu,mpORBextractorLeft,mpORBVocabulary,mK,mDistCoef,mbf,mThDepth,mpLastKeyFrame);
+        mCurrentFrame = Frame(mImGray,imGrayRight,timestamp,vimu,mpORBextractorLeft,mpORBextractorRight,mpORBVocabulary,mK,mDistCoef,mbf,mThDepth,mpLastKeyFrame);
 
     Track();
 
